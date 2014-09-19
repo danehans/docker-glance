@@ -32,6 +32,7 @@ RUN touch /var/log/glance/api.log
 RUN chown glance:glance /var/log/glance/api.log
 RUN touch /var/log/glance/registry.log
 RUN chown glance:glance /var/log/glance/registry.log
+RUN systemctl enable ntpd
 RUN systemctl enable openstack-glance-api
 RUN systemctl enable openstack-glance-registry
 

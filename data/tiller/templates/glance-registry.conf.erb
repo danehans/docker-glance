@@ -1,26 +1,21 @@
 [DEFAULT]
 # Show more verbose log output (sets INFO log level output)
 #verbose=True
-verbose=True
 
 # Show debugging output in logs (sets DEBUG log level output)
 #debug=False
-debug=False
 
 # Address to bind the registry server
 #bind_host=0.0.0.0
-bind_host=0.0.0.0
 
 # Port the bind the registry server to
 #bind_port=9191
-bind_port=9191
 
 # Log to this file. Make sure you do not set the same log file for both the API
 # and registry servers!
 #
 # If `log_file` is omitted and `use_syslog` is false, then log messages are
 # sent to stdout as a fallback.
-#log_file=/var/log/glance/registry.log
 log_file=/var/log/glance/registry.log
 
 # Backlog requests when creating socket
@@ -63,7 +58,6 @@ log_file=/var/log/glance/registry.log
 # Send logs to syslog (/dev/log) instead of to file specified
 # by `log_file`
 #use_syslog=False
-use_syslog=False
 
 # Facility to use. If unset defaults to LOG_USER.
 #syslog_log_facility=LOG_LOCAL1
@@ -80,9 +74,6 @@ use_syslog=False
 #ca_file=/path/to/cafile
 
 # ================= Database Options ==========================
-sql_idle_timeout=3600
-log_dir=/var/log/glance
-sql_connection=mysql://glance:cisco123@10.10.10.200/glance
 
 [database]
 # The file name to use with SQLite (string value)
@@ -101,6 +92,7 @@ sql_connection=mysql://glance:cisco123@10.10.10.200/glance
 # Deprecated group/name - [DATABASE]/sql_connection
 # Deprecated group/name - [sql]/connection
 #connection=mysql://glance:glance@localhost/glance
+connection=mysql://glance:<%= env_db_password %>@<%= env_db_host %>/glance
 
 # The SQL mode to be used for MySQL sessions. This option,
 # including the default, overrides any server-set SQL mode. To
@@ -181,19 +173,14 @@ sql_connection=mysql://glance:cisco123@10.10.10.200/glance
 #db_max_retries=20
 
 [keystone_authtoken]
-#auth_host=127.0.0.1
-auth_host=10.10.10.200
-#auth_port=35357
-auth_port=35357
-#auth_protocol=http
-auth_protocol=http
+auth_uri=http://<%= env_keystone_host %>:<%= env_keystone_public_port %>/v2.0
+identity_uri = http://<%= env_keystone_host %>:<%= env_keystone_admin_port %>
 #admin_tenant_name=%SERVICE_TENANT_NAME%
-admin_tenant_name=services
+admin_tenant_name=<%= env_service_tenant %>
 #admin_user=%SERVICE_USER%
 admin_user=glance
 #admin_password=%SERVICE_PASSWORD%
-admin_password=cisco123
-auth_uri=http://10.10.10.200:5000/
+admin_password=<%= env_service_password %>
 
 [paste_deploy]
 # Name of the paste configuration file that defines the available pipelines

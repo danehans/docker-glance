@@ -1,0 +1,34 @@
+glance-api.conf.erb:
+  target: /etc/glance/glance-api.conf
+  user: glance
+  group: glance
+  perms: 0644
+  config: {}
+
+glance-registry.conf.erb:
+  target: /etc/glance/glance-registry.conf
+  user: glance
+  group: glance
+  perms: 0644
+  config: {}
+
+api.log.erb:
+  target: /var/log/glance/api.log
+  user: glance
+  group: glance
+  perms: 0644
+  config: {}
+
+admin-openrc.erb:
+  target: /root/admin-openrc.sh
+  user: root
+  group: root
+  perms: 0755
+  config: {}
+
+demo-openrc.erb:
+  target: /root/demo-openrc.sh
+  user: root
+  group: root
+  perms: 0755
+  config: {}

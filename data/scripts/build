@@ -1,0 +1,145 @@
+#!/bin/bash
+#
+# Script to create and run docker-glance image.
+#
+set -x
+set -e
+
+# Check for Root user
+if [ "$(id -u)" != "0" ]; then
+    echo "This script must be run as root or with sudo"
+    exit 1
+fi
+
+# The name of the Docker base image.
+# This should be a RHEL7 image with systemd.
+export BASE_IMAGE="${BASE_IMAGE:-danehans/rhel7-systemd}"
+
+# docker-glance Github Repo branch
+export REPO_BRANCH="${REPO_BRANCH:-}"
+
+# docker-glance Github Repo Name
+export REPO_NAME="${REPO_NAME:-}"
+
+# Configure the Docker Glance Image Name
+export IMAGE_NAME="${IMAGE_NAME:-glance}"
+
+# Configure the Hostname used within the Glance container
+export HOSTNAME="${HOSTNAME:-$HOSTNAME}"
+
+# Backend scheme Glance uses by default to store images.
+# Options are file (default) and swift.
+export DEFAULT_STORE="${DEFAULT_STORE:-file}"
+
+# Address to find the registry server
+export REGISTRY_HOST="${REGISTRY_HOST:-0.0.0.0}"
+
+# Configure the DB Host
+export DB_HOST="${DB_HOST:-127.0.0.1}"
+
+# Configure the DB Password
+export DB_PASSWORD="${DB_PASSWORD:-changeme}"
+
+# Configure the RabbitMQ Host
+export RABBIT_HOST="${RABBIT_HOST:-127.0.0.1}"
+
+# Configure the RabbitMQ User ID
+export RABBIT_USER="${RABBIT_USER:-guest}"
+
+# Configure the RabbitMQ User Password
+export RABBIT_PASSWORD="${RABBIT_PASSWORD:-guest}"
+
+# Configure the Keystone Host
+export KEYSTONE_HOST="${KEYSTONE_HOST:-127.0.0.1}"
+
+# Configure the Keystone Admin API Listening Port
+export KEYSTONE_ADMIN_PORT="${KEYSTONE_ADMIN_PORT:-35357}"
+
+# Configure the Keystone Public API Listening Port
+export KEYSTONE_PUBLIC_PORT="${KEYSTONE_PUBLIC_PORT:-5000}"
+
+# Configure the Service Tenant
+export SERVICE_TENANT="${SERVICE_TENANT:-service}"
+
+# Configure the Service Password
+export SERVICE_PASSWORD="${SERVICE_PASSWORD:-changeme}"
+
+# Configure the Admin User Password for the admin-openrc file
+export ADMIN_USER_PASSWORD="${ADMIN_USER_PASSWORD:-changeme}"
+
+# Configure the Demo User Password for the demo-openrc file
+export DEMO_USER_PASSWORD="${DEMO_USER_PASSWORD:-changeme}"
+
+# Install docker-glance project
+if ! [ -d $HOME/docker-glance ]; then
+  git clone -b $REPO_BRANCH https://github.com/danehans/docker-glance.git $HOME/docker-glance
+fi
+
+if ! [ -f $HOME/docker-glance/Dockerfile ]; then
+  cat <<EOF > $HOME/docker-glance/Dockerfile
+# Glance
+# VERSION               0.0.1
+# Tested on RHEL7 and OSP5 (i.e. Icehouse)
+
+FROM $BASE_IMAGE
+MAINTAINER Daneyon Hansen "daneyonhansen@gmail.com"
+
+# Set the parameters used to configure glance-api and registry.conf
+ENV DEFAULT_STORE $DEFAULT_STORE
+ENV REGISTRY_HOST $REGISTRY_HOST
+ENV DB_HOST $DB_HOST
+ENV DB_PASSWORD $DB_PASSWORD
+ENV RABBIT_HOST $RABBIT_HOST
+ENV RABBIT_USER $RABBIT_USER
+ENV RABBIT_PASSWORD $RABBIT_PASSWORD
+ENV KEYSTONE_HOST $KEYSTONE_HOST 
+ENV KEYSTONE_ADMIN_PORT $KEYSTONE_ADMIN_PORT
+ENV KEYSTONE_PUBLIC_PORT $KEYSTONE_PUBLIC_PORT
+ENV SERVICE_TENANT $SERVICE_TENANT
+ENV SERVICE_PASSWORD $SERVICE_PASSWORD
+ENV DEMO_USER_PASSWORD $DEMO_USER_PASSWORD
+ENV ADMIN_USER_PASSWORD $ADMIN_USER_PASSWORD
+
+# Set working directory for RUN and CMD instructions.
+WORKDIR /root
+
+# Required Utilities
+RUN yum -y install openssl ntp wget rubygems
+RUN systemctl enable ntpd
+
+# Tiller Installation. For more info: https://github.com/markround/tiller
+RUN gem install tiller
+ADD data/tiller/common.yaml /etc/tiller/common.yaml
+ADD data/tiller/environments/production.yaml /etc/tiller/environments/production.yaml
+ADD data/tiller/templates/glance-api.conf.erb /etc/tiller/templates/glance-api.conf.erb
+ADD data/tiller/templates/glance-registry.conf.erb /etc/tiller/templates/glance-registry.conf.erb
+ADD data/tiller/templates/api.log.erb /etc/tiller/templates/api.log.erb
+
+# Install Glance Packages
+RUN yum -y install openstack-glance
+
+# Copy Keystone Credential Files
+ADD data/tiller/templates/admin-openrc.erb /etc/tiller/templates/admin-openrc.erb
+ADD data/tiller/templates/demo-openrc.erb /etc/tiller/templates/demo-openrc.erb
+RUN /usr/local/bin/tiller
+
+# Enable Glance services
+RUN systemctl enable openstack-glance-api
+RUN systemctl enable openstack-glance-registry
+
+# Initialize the Glance MySQL DB
+RUN glance-manage db_sync
+
+# Expose Glance TCP ports
+EXPOSE 9191 9292
+
+# Start Init
+CMD ["/usr/sbin/init"]
+EOF
+fi
+
+echo 'Dockerfile generated. Now building image'
+
+sudo docker build -t $IMAGE_NAME $HOME/docker-glance
+
+exit $?

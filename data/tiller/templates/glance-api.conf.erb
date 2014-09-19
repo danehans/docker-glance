@@ -1,18 +1,16 @@
 [DEFAULT]
 # Show more verbose log output (sets INFO log level output)
 #verbose=True
-verbose=True
 
 # Show debugging output in logs (sets DEBUG log level output)
 #debug=False
-debug=False
 
 # Which backend scheme should Glance use by default is not specified
 # in a request to add a new image to Glance? Known schemes are determined
 # by the known_stores option below.
 # Default: 'file'
 #default_store=file
-default_store=file
+default_store=<%= env_default_store %>
 
 # List of which store classes and store class locations are
 # currently known to glance at startup.
@@ -34,23 +32,19 @@ default_store=file
 
 # Address to bind the API server
 #bind_host=0.0.0.0
-bind_host=0.0.0.0
 
 # Port the bind the API server to
 #bind_port=9292
-bind_port=9292
 
 # Log to this file. Make sure you do not set the same log file for both the API
 # and registry servers!
 #
 # If `log_file` is omitted and `use_syslog` is false, then log messages are
 # sent to stdout as a fallback.
-#log_file=/var/log/glance/api.log
 log_file=/var/log/glance/api.log
 
 # Backlog requests when creating socket
 #backlog=4096
-backlog=4096
 
 # TCP_KEEPIDLE value in seconds when creating socket.
 # Not supported on OS X.
@@ -66,7 +60,6 @@ backlog=4096
 # compression turned on). It is typically recommended to set
 # this value to the number of CPUs present on your machine.
 #workers=1
-workers=1
 
 # Maximum line size of message headers to be accepted.
 # max_header_line may need to be increased when using large tokens
@@ -93,7 +86,6 @@ workers=1
 # be returned to the user in the 'direct_url' meta-data field.
 # The default value is false.
 #show_image_direct_url=False
-show_image_direct_url=False
 
 # Send headers containing user and tenant information when making requests to
 # the v1 glance registry. This allows the registry to function as if a user is
@@ -142,7 +134,6 @@ show_image_direct_url=False
 # Send logs to syslog (/dev/log) instead of to file specified
 # by `log_file`
 #use_syslog=False
-use_syslog=False
 
 # Facility to use. If unset defaults to LOG_USER.
 #syslog_log_facility=LOG_LOCAL0
@@ -169,11 +160,10 @@ use_syslog=False
 
 # Address to find the registry server
 #registry_host=0.0.0.0
-registry_host=0.0.0.0
+registry_host=<%= env_registry_host %>
 
 # Port the registry server is listening on
 #registry_port=9191
-registry_port=9191
 
 # What protocol to use when connecting to the registry server?
 # Set to https for secure HTTP communication
@@ -253,21 +243,16 @@ notification_driver = messaging
 # Configuration options if sending notifications via rabbitmq (these are
 # the defaults)
 #rabbit_host=localhost
-rabbit_host=10.10.10.200
+rabbit_host=<%= env_rabbit_host %>
 #rabbit_port=5672
-rabbit_port=5672
 #rabbit_use_ssl=false
-rabbit_use_ssl=False
 #rabbit_userid=guest
-rabbit_userid=guest
+rabbit_userid=<%= env_rabbit_user %>
 #rabbit_password=guest
-rabbit_password=guest
+rabbit_password=<%= env_rabbit_password %>
 #rabbit_virtual_host=/
-rabbit_virtual_host=/
 #rabbit_notification_exchange=glance
-rabbit_notification_exchange=glance
 #rabbit_notification_topic=notifications
-rabbit_notification_topic=notifications
 #rabbit_durable_queues=False
 
 # Configuration options if sending notifications via Qpid (these are
@@ -294,7 +279,6 @@ rabbit_notification_topic=notifications
 # Directory that the Filesystem backend store
 # writes image data to
 #filesystem_store_datadir=/var/lib/glance/images/
-filesystem_store_datadir=/var/lib/glance/images/
 
 # A list of directories where image data can be stored.
 # This option may be specified multiple times for specifying multiple store
@@ -316,6 +300,7 @@ filesystem_store_datadir=/var/lib/glance/images/
 # store.
 #filesystem_store_metadata_file=None
 
+<% if env_default_store == "swift" %>
 # ============ Swift Store Options =============================
 
 # Version of the authentication service to use
@@ -327,16 +312,19 @@ filesystem_store_datadir=/var/lib/glance/images/
 # If no scheme specified,  default to 'https://'
 # For swauth, use something like '127.0.0.1:8080/v1.0/'
 #swift_store_auth_address=127.0.0.1:5000/v2.0/
+swift_store_auth_address=<%= env_keystone_host %>:<%= env_keystone_public_port %>/v2.0/
 
 # User to authenticate against the Swift authentication service
 # If you use Swift authentication service, set it to 'account':'user'
 # where 'account' is a Swift storage account and 'user'
 # is a user in that account
 #swift_store_user=jdoe:jdoe
+swift_store_user=<%= env_service_tenant %>:swift
 
 # Auth key for the user authenticating against the
 # Swift authentication service
 #swift_store_key=a86850deb2742ec3cb41518e26aa2d89
+swift_store_key=<%= env_service_password %>
 
 # Container within the account that the account should use
 # for storing images in Swift
@@ -344,6 +332,7 @@ filesystem_store_datadir=/var/lib/glance/images/
 
 # Do we create the container if it does not exist?
 #swift_store_create_container_on_put=False
+swift_store_create_container_on_put=True
 
 # What size, in MB, should Glance start chunking image files
 # and do a large object manifest in Swift? By default, this is
@@ -393,6 +382,7 @@ filesystem_store_datadir=/var/lib/glance/images/
 # The number of times a Swift download will be retried before the
 # request fails
 #swift_store_retry_get_count=0
+<% end %>
 
 # ============ S3 Store Options =============================
 
@@ -566,13 +556,6 @@ filesystem_store_datadir=/var/lib/glance/images/
 #db_enforce_mysql_charset=False
 
 # =============== Database Options =================================
-rabbit_ha_queues=False
-kombu_ssl_version=SSLv3
-rabbit_hosts=10.10.10.200:5672
-amqp_durable_queues=False
-log_dir=/var/log/glance
-sql_connection=mysql://glance:cisco123@10.10.10.200/glance
-sql_idle_timeout=3600
 
 [database]
 # The file name to use with SQLite (string value)
@@ -591,6 +574,7 @@ sql_idle_timeout=3600
 # Deprecated group/name - [DATABASE]/sql_connection
 # Deprecated group/name - [sql]/connection
 #connection=mysql://glance:glance@localhost/glance
+connection=mysql://glance:<%= env_db_password %>@<%= env_db_host %>/glance
 
 # The SQL mode to be used for MySQL sessions. This option,
 # including the default, overrides any server-set SQL mode. To
@@ -671,19 +655,11 @@ sql_idle_timeout=3600
 #db_max_retries=20
 
 [keystone_authtoken]
-#auth_host=127.0.0.1
-auth_host=10.10.10.200
-#auth_port=35357
-auth_port=35357
-#auth_protocol=http
-auth_protocol=http
-#admin_tenant_name=%SERVICE_TENANT_NAME%
-admin_tenant_name=services
-#admin_user=%SERVICE_USER%
+auth_uri=http://<%= env_keystone_host %>:<%= env_keystone_public_port %>/v2.0
+identity_uri = http://<%= env_keystone_host %>:<%= env_keystone_admin_port %>
+admin_tenant_name=<%= env_service_tenant %>
 admin_user=glance
-#admin_password=%SERVICE_PASSWORD%
-admin_password=cisco123
-auth_uri=http://10.10.10.200:5000/
+admin_password=<%= env_service_password %>
 
 [paste_deploy]
 # Name of the paste configuration file that defines the available pipelines
