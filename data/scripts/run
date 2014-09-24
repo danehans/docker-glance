@@ -17,13 +17,13 @@ export IMAGE_NAME="${IMAGE_NAME:-glance}"
 # Configure the Glance Container Name
 export CONTAINER_NAME="${CONTAINER_NAME:-glance}"
 
-# Configure the Glance Hostname
-export HOSTNAME="${HOSTNAME:-$HOSTNAME}"
+# Configure the Hostname used within the Glance container
+export GLANCE_HOSTNAME="${GLANCE_HOSTNAME:-$HOSTNAME}"
 
 # Configure the Glance Hostname
 export DNS_SEARCH="${DNS_SEARCH:-example.com}"
 
-docker run --privileged -d -h $HOSTNAME --dns-search $DNS_SEARCH -v /sys/fs/cgroup:/sys/fs/cgroup:ro -p 9191:9191 -p 9292:9292 --name="$CONTAINER_NAME" $IMAGE_NAME
+docker run --privileged -d -h $GLANCE_HOSTNAME --dns-search $DNS_SEARCH -v /sys/fs/cgroup:/sys/fs/cgroup:ro -p 9191:9191 -p 9292:9292 --name="$CONTAINER_NAME" $IMAGE_NAME
 
 # Get the PID of the Glance Container
 CONTAINER_PID="$(docker inspect --format={{.State.Pid}} $CONTAINER_NAME)"
